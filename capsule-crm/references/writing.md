@@ -37,7 +37,6 @@ replies 422 "size must be between 0 and 250" (addresses say "invalid address", c
 | Project `name` | **255** |
 | Task `detail` | 8,000 |
 | Party `about`, opportunity and project `description`, note `content` | 16,000 |
-| Person `title`, address `country` | none found (a title took 262,144 characters) |
 
 Tag name limits haven't been measured.
 

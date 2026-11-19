@@ -8,6 +8,10 @@ adds an entry here.
 - **minor**: new endpoints, behaviour or client features.
 - **patch**: corrections and wording.
 
+## 1.1.1 (2026-11-20)
+
+- Dropped the note that titles and countries take very long strings; use the values from /titles and /countries.
+
 ## 1.1.0 (2026-11-19)
 
 - Text limits per field, counted in code points (opportunity name 100, project name 255, most short fields 250).
