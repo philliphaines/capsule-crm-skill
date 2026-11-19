@@ -1,0 +1,75 @@
+<!doctype html>
+<!-- Source for social-preview.png (1280×640). Re-render with Chrome:
+     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --hide-scrollbars \
+       --window-size=1280,640 --screenshot=social-preview.png social-preview.html -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 640px; overflow: hidden; }
+  body {
+    background: #0f1720;
+    background-image:
+      radial-gradient(circle at 88% 12%, rgba(56, 189, 148, 0.22), transparent 42%),
+      radial-gradient(circle at 8% 100%, rgba(99, 102, 241, 0.18), transparent 45%);
+    color: #e6edf3;
+    font-family: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    padding: 60px 80px 56px;
+    display: flex;
+    flex-direction: column;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 22px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #5eead4;
+  }
+  .eyebrow::before {
+    content: ""; width: 12px; height: 12px; border-radius: 50%; background: #5eead4;
+  }
+  h1 {
+    margin-top: 18px;
+    font-size: 84px; font-weight: 700; letter-spacing: -0.02em; line-height: 1;
+  }
+  .tagline {
+    margin-top: 22px; max-width: 900px;
+    font-size: 30px; line-height: 1.35; color: #9fb0c0;
+  }
+  .terminal {
+    margin-top: 34px; align-self: flex-start; white-space: nowrap;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 22px 28px;
+    font-family: Menlo, Monaco, monospace; font-size: 22px; line-height: 1.7;
+  }
+  .terminal .p { color: #5eead4; }
+  .terminal .c { color: #6b7d8f; }
+  .chips { margin-top: auto; display: flex; gap: 12px; align-items: center; }
+  .chip {
+    font-size: 20px; font-weight: 600; color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 999px;
+    padding: 8px 18px;
+  }
+  .repo { margin-left: auto; font-size: 20px; color: #6b7d8f; }
+</style>
+</head>
+<body>
+  <div class="eyebrow">Claude Code skill</div>
+  <h1>capsule-crm-skill</h1>
+  <p class="tagline">Read and update Capsule CRM through its REST API v2, with paging, rate limits and write approval handled for you.</p>
+  <div class="terminal">
+    <div><span class="p">$</span> capsule.py get parties --all</div>
+    <div><span class="p">$</span> capsule.py put kases/12 --data @change.json --confirm</div>
+    <div class="c"># writes are refused without --confirm</div>
+  </div>
+  <div class="chips">
+    <span class="chip">Paging</span>
+    <span class="chip">429 retries</span>
+    <span class="chip">Write guard</span>
+    <span class="chip">Filters</span>
+    <span class="chip">OAuth</span>
+    <span class="repo">github.com/philliphaines/capsule-crm-skill</span>
+  </div>
+</body>
+</html>
