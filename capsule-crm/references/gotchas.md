@@ -50,7 +50,28 @@ behaviour won.
   `{amount, discountType}` (`PERCENTAGE`, case-insensitive, or an amount off). Name them from
   `/products`.
 - **`sideload=true` turns every other nested object into a bare id.** Read only `lineItems`
-  from that reply.
+  from that reply. (On `/products?embed=prices`, though, `sideload=true` is what turns each
+  price's `market` *into* an object.)
+- An opportunity's `market` only appears with `embed=market`. Without it, don't read its
+  absence as "no market".
+- Products and payment terms don't mix. With line items, Capsule calculates the value itself and
+  forces `durationBasis` to `FIXED` ([writing.md](writing.md#products-line-items)).
+- `durationBasis` may be missing or hold a value you don't recognise: treat it as `FIXED`, and
+  ignore a `duration` that comes with `FIXED`.
+- Writing line items: `product` is required even on a removal, `quantity` must be an integer,
+  and an amount discount is `FIXED`, not `AMOUNT`.
+
+## Text Capsule can't take
+
+- Limits are per field and counted in code points; an opportunity name is only 100, a project
+  name 255, most other short fields 250 ([writing.md](writing.md#text-limits)).
+- **Characters above U+FFFF (most emoji) can't be stored.** Most fields accept them with 200 and
+  store "��", which quietly damages the text. An organisation name, a person's title and an
+  email address fail with HTTP 500 "Internal Server Error". Treat a 500 on a write as a
+  refusal that probably comes from such characters, not as an outage, and don't retry it
+  unchanged.
+- `GET /titles` leaves out Capsule's built-in titles unless you add `includeBuiltinTitles=true`.
+- Addresses take the country's English name from `/countries`, not its ISO code.
 
 ## Projects
 
@@ -99,7 +120,8 @@ behaviour won.
   spaces, skipping blanks. If there's nothing useful, say "Capsule couldn't save the change
   (HTTP *status*)."
 - On a refused write: 422/400 means fix the body; 403 means no permission (read-only token or
-  restricted record); 404 means the record was deleted in Capsule meanwhile.
+  restricted record); 404 means the record was deleted in Capsule meanwhile; 500 most likely
+  means characters Capsule can't store (see above).
 
 ## Rate limits and retries
 

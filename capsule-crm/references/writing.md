@@ -17,6 +17,49 @@ POST or PUT to get tags and custom fields back in the reply.
   - removed item: `{"id": 456, "_delete": true}`.
   Leave empty item keys out rather than sending them as `null`.
 - **Dates** are `YYYY-MM-DD`; times of day `HH:mm:ss`.
+- **Check text before sending** against the limits and characters below.
+
+## Text limits
+
+Measured live on 2026-11-19. Lengths count Unicode code points after trimming surrounding
+spaces: "é" counts once, but "e" plus a combining accent counts twice. Over the limit, Capsule
+replies 422 "size must be between 0 and 250" (addresses say "invalid address", custom fields
+"invalid value for custom field").
+
+| Field | Limit |
+|---|---|
+| Person `firstName`, `lastName`, `jobTitle`; organisation `name` | 250 |
+| Phone `number`, email `address`, website `address` | 250 |
+| Address `street`, `city`, `state`, `zip` | 250 |
+| Custom text field value | 250 |
+| Task `description` (title) | 250 |
+| Opportunity `name` | **100** |
+| Project `name` | **255** |
+| Task `detail` | 8,000 |
+| Party `about`, opportunity and project `description`, note `content` | 16,000 |
+| Person `title`, address `country` | none found (a title took 262,144 characters) |
+
+Tag name limits haven't been measured.
+
+**Capsule can't store characters above U+FFFF**: most emoji (😀, 🎉), and rare CJK such as
+𠀀. That holds whether they're sent as UTF-8 or as `😀` escapes. Most fields reply
+200 but store "��" instead, so the text is quietly damaged. An organisation's `name`, a
+person's `title` and an email `address` fail with **500** instead. Characters up to U+FFFF are
+fine, including ☀️, ❤️, accented and macronised letters (Māori) and common CJK. Tell the user
+which characters can't be saved; don't strip or swap them silently. `scripts/capsule.py`
+refuses to send them.
+
+## Required names
+
+A person needs a `firstName` or `lastName`; an organisation, opportunity or project needs a
+`name`; a task needs a `description` and `dueOn`.
+
+## Titles and countries
+
+- A person's `title` should be one of `/titles?includeBuiltinTitles=true` (an account can add up
+  to 50 of its own).
+- An address's `country` is a country `name` from `/countries` in English ("United Kingdom",
+  "New Zealand"), not an ISO code. (Filters use codes: `country is "GB"`.)
 
 ## Contacts
 
@@ -88,6 +131,57 @@ that tag.
   set the Won milestone. Capsule fills `closedOn`.
 - `value` with no `currency` uses the account's default; `"value": null` clears it.
 - Additional contacts aren't in the body: `POST /opportunities/{id}/parties/{partyId}`.
+- Read and write with `?embed=tags,fields,market` so the reply shows the opportunity's market.
+
+### Payment terms
+
+`durationBasis` is one of `FIXED`, `HOUR`, `DAY`, `WEEK`, `MONTH`, `QUARTER`, `YEAR`; a missing
+basis means `FIXED`. For anything but `FIXED`, `value` is per period and `duration` is the
+number of periods (a whole number, at least 1); the total is value × duration.
+
+```json
+{"opportunity": {"value": {"amount": 500, "currency": "GBP"}, "durationBasis": "MONTH", "duration": 12}}
+```
+
+- Always send `durationBasis` and `duration` together. A basis other than `FIXED` without a
+  duration of at least 1 gets 422. With `FIXED`, Capsule clears the duration itself.
+- A new opportunity needs the terms only when they aren't `FIXED`.
+
+### Products (line items)
+
+An opportunity's value comes **either** from products **or** from an amount with payment
+terms, never both. Once an opportunity has line items, Capsule works the value out from them
+(after discount, with tax), sets the currency to the market's and keeps the terms `FIXED`. So
+don't send `value`, `durationBasis` or `duration` for an opportunity with products.
+
+Products are priced per **market** (`/markets`). A product can go on an opportunity in a market
+when its `status` is `active` and it has a price in that market
+(`/products?embed=prices&sideload=true`). Send `market` with the opportunity's first products:
+
+```json
+{"opportunity": {
+  "market": {"id": 2},
+  "lineItems": [
+    {"product": {"id": 77}, "quantity": 3, "discount": {"amount": 10, "discountType": "PERCENTAGE"}, "taxRate": 20},
+    {"id": 5501, "product": {"id": 78}, "quantity": 2, "discount": null, "taxRate": null},
+    {"id": 5502, "product": {"id": 79}, "_delete": true}
+  ]
+}}
+```
+
+Checked live on 2026-11-18:
+
+- A line without `id` is **added** to the existing lines. Capsule prices it from the market;
+  don't send a price.
+- A line with `id` **changes** that line; `"discount": null` and `"taxRate": null` clear them.
+- `{"id": …, "product": {"id": …}, "_delete": true}` **removes** a line. `product` is required on
+  every line, even one being removed ("product is required").
+- `quantity` must be a whole number, and is required when adding.
+- `discountType` is `PERCENTAGE` or `FIXED` (an amount off). `AMOUNT` is refused.
+- `taxRate` is a percentage, such as `20`.
+- Removing the last line leaves the value at 0 in the market's currency; the market stays.
+- To see the lines afterwards, fetch `GET /opportunities/{id}?embed=lineItems&sideload=true`.
+  A PUT's reply doesn't list them.
 
 ## Projects (kases)
 

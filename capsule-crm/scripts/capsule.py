@@ -33,7 +33,16 @@ from pathlib import Path
 
 HOST = "https://api.capsulecrm.com"
 BASE = HOST + "/api/v2"
-USER_AGENT = "capsule-crm-skill/1.0"
+
+def skill_version():
+    try:
+        text = (Path(__file__).resolve().parent.parent / "SKILL.md").read_text()
+        return re.search(r"^\s+version:\s*(\S+)", text, re.M).group(1)
+    except (OSError, AttributeError):
+        return "unknown"
+
+
+USER_AGENT = f"capsule-crm-skill/{skill_version()}"
 MAX_RATE_RETRIES = 3
 MAX_WAIT_SECONDS = 60
 
@@ -171,7 +180,11 @@ def request(method, url, token, body=None, content_type=None, extra_headers=None
                     f"Rate limited by Capsule (4,000 requests/hour per user); try again in {wait}s.",
                     status=429, exit_code=3,
                 )
-            raise CapsuleError(error_message(e.code, raw), status=e.code)
+            message = error_message(e.code, raw)
+            if e.code == 500 and method in ("POST", "PUT"):
+                message = (f"HTTP 500: Capsule couldn't save the change. It may hold characters "
+                           f"Capsule can't store (above U+FFFF, such as emoji).")
+            raise CapsuleError(message, status=e.code)
         except urllib.error.URLError as e:
             raise CapsuleError(f"Network error: {e.reason}")
     raise AssertionError("unreachable")
@@ -225,14 +238,39 @@ def parse_params(pairs):
     return params
 
 
-def load_data(data):
+def unstorable(value):
+    """Characters above U+FFFF anywhere in a decoded JSON value, in order, once each.
+
+    Capsule can't store them: most fields save "��" instead, and some fail with a 500.
+    """
+    found = []
+    stack = [value]
+    while stack:
+        item = stack.pop()
+        if isinstance(item, str):
+            found += [ch for ch in item if ord(ch) > 0xFFFF and ch not in found]
+        elif isinstance(item, dict):
+            stack += reversed(list(item.values()))
+        elif isinstance(item, list):
+            stack += reversed(item)
+    return found
+
+
+def load_data(data, check_text=True):
     if data is None:
         raise CapsuleError("This command needs --data", exit_code=2)
     text = Path(data[1:]).read_text() if data.startswith("@") else data
     try:
-        json.loads(text)
+        value = json.loads(text)
     except ValueError as e:
         raise CapsuleError(f"--data is not valid JSON: {e}", exit_code=2)
+    bad = unstorable(value) if check_text else []
+    if bad:
+        raise CapsuleError(
+            "Capsule can't store these characters (above U+FFFF, such as most emoji): "
+            + " ".join(bad) + ". Ask the user to remove or replace them.",
+            exit_code=2,
+        )
     return text.encode("utf-8")
 
 
@@ -293,7 +331,7 @@ def main(argv=None):
             is_query = args.command == "post" and args.path.rstrip("/").endswith("filters/results")
             if not is_query:
                 require_confirm(args)
-            body = load_data(args.data)
+            body = load_data(args.data, check_text=not is_query)
             params = parse_params(args.param)
             if is_query and args.all:
                 params = [p for p in params if p[0] != "page"]

@@ -18,7 +18,10 @@ max 100; per-record entries max 50). Follow the `Link` header's `rel="next"`
 | GET | `/milestones` | **Only the first pipeline's** milestones ([gotchas](gotchas.md#opportunities)) |
 | GET | `/lostreasons` | Reasons an opportunity can be lost |
 | GET | `/currencies` | Not paged |
-| GET | `/products` | Products for opportunity line items (`id`, `name`, `sku`) |
+| GET | `/markets` | Markets, each with its own price list: `id`, `label`, `currency`, `default` |
+| GET | `/products` | Products for opportunity line items (`id`, `name`, `sku`, `status`). Add `embed=prices&sideload=true` for each price's `market` (as an object) and `amount` |
+| GET | `/titles?includeBuiltinTitles=true` | Person titles (`personTitles[].title`, `systemTitle`). Without the flag only the account's own titles come back; the built-ins are Mr, Master, Mrs, Miss, Ms, Dr, Prof |
+| GET | `/countries` | 250 countries with `name`, `alpha2Code`, `alpha3Code`, `numericCode`, `dialCode`. Not paged. An address's `country` is the English `name` |
 | GET | `/boards`, `/boards/{id}/stages` | Project boards and stages (`displayOrder`) |
 | GET | `/categories` | Task categories (`id`, `name`, `colour`). Not paged |
 | GET | `/activitytypes` | Note activity types (Meeting, Call…). Ids can be negative (built-ins) |
@@ -45,7 +48,8 @@ Embeds: `tags`, `fields`, `organisation`, `missingImportantFields`.
 
 ## Opportunities
 
-Embeds: `tags`, `fields`, `party`, `milestone`, `lineItems`, `missingImportantFields`.
+Embeds: `tags`, `fields`, `party`, `milestone`, `lineItems`, `market`, `missingImportantFields`.
+Without `embed=market` an opportunity's market is left out (with `sideload=true` it's a bare id).
 
 | Method | Path | Notes |
 |---|---|---|
