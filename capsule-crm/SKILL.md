@@ -1,6 +1,9 @@
 ---
 name: capsule-crm
 description: Read and change data in Capsule CRM through its REST API v2 (api.capsulecrm.com). Use whenever the user asks about their Capsule contacts (parties, people, organisations), opportunities, pipelines, projects (cases, "kases"), tasks, tracks, notes, history entries, tags or custom fields; wants to search, filter, list, export, create, update or delete Capsule records; or is writing code, an integration or an app that calls the Capsule API (OAuth, paging, sync, webhooks/REST hooks).
+metadata:
+  version: 1.1.0
+  updated: 2026-11-19
 ---
 
 # Capsule CRM API
@@ -40,9 +43,13 @@ python3 $C put parties/123 --data '{"party":{"jobTitle":"Buyer"}}' --confirm
 5. **Send only what changes.** PUT updates only the fields sent; `null` clears a field; nested
    items (phones, emails, tags, custom field values…) are changed by `id` and removed with
    `{"id": N, "_delete": true}`. See [references/writing.md](references/writing.md).
-6. **Read leniently.** Any field can be missing or null, even names and nested ids. Don't let
+6. **Check text before writing.** Fields have length limits (opportunity name 100, project
+   name 255, most short fields 250, long text 8,000–16,000). Capsule can't store characters
+   above U+FFFF, such as most emoji: it silently saves "��" or fails with a 500. Tell the user
+   rather than changing their text. See [references/writing.md](references/writing.md#text-limits).
+7. **Read leniently.** Any field can be missing or null, even names and nested ids. Don't let
    one odd record stop a report or script.
-7. **Trust live responses over the docs.** Capsule's docs have been wrong or silent several
+8. **Trust live responses over the docs.** Capsule's docs have been wrong or silent several
    times. When data looks missing or odd, check a live GET before guessing. The known traps are
    in [references/gotchas.md](references/gotchas.md); read it before writing sync or bulk code.
 
@@ -56,6 +63,7 @@ python3 $C put parties/123 --data '{"party":{"jobTitle":"Buyer"}}' --confirm
 | Up to 10 known records at once | `get parties/1,2,3` (404 if any one is missing) |
 | A record's history | `get parties/{id}/entries -p embed=party,creator,activityType` (add `-p includeLinked=true` for an organisation) |
 | Open tasks | `get tasks --all -p embed=party,opportunity,kase,owner` |
+| An opportunity's products | `get opportunities/{id} -p embed=lineItems -p sideload=true`, names and prices from `get products --all -p embed=prices -p sideload=true` |
 | To add a note, task, track, contact, opportunity or project | Build the body from [references/writing.md](references/writing.md), show it, then send with `--confirm` |
 | To build an app or integration | Read [references/oauth.md](references/oauth.md) and [references/gotchas.md](references/gotchas.md) |
 
@@ -88,7 +96,8 @@ When reporting to the user, link records to the web app where helpful:
 | 401 | Token missing, wrong or expired | Ask the user for a fresh token |
 | 403 | Token lacks scope (read-only) or the user isn't an admin | Tell the user; don't retry |
 | 404 | No such record (or one of several ids) | Re-check ids; it may have been deleted |
-| 422 | Validation failed | Show Capsule's message (`message` + each `errors[].message`), fix the body |
+| 422 | Validation failed, including text over a field's limit | Show Capsule's message (`message` + each `errors[].message`), fix the body |
+| 500 on a write | Usually text with characters above U+FFFF (emoji) in an organisation name, title or email | Don't retry unchanged; ask the user to remove those characters |
 | 429 | Over 4,000 requests/hour for this user | The client waits and retries up to 3 times; otherwise stop and report |
 | 202 | Accepted for later (large deletes) | Poll the `Location` job URL (`/jobs/{id}`) |
 
