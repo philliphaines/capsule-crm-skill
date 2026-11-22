@@ -3,6 +3,9 @@
 A Claude Code skill for the Capsule CRM REST API v2, built from live testing against Capsule
 plus Capsule's developer docs.
 
+> **Not an official Capsule product.** This is an independent project. Capsule doesn't
+> endorse or support it.
+
 ```
 capsule-crm/
   SKILL.md                 version (frontmatter), when to use it, rules (writes need approval), quick recipes
