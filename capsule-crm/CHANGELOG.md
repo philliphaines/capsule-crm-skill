@@ -8,6 +8,10 @@ adds an entry here.
 - **minor**: new endpoints, behaviour or client features.
 - **patch**: corrections and wording.
 
+## 1.1.2 (2026-11-28)
+
+- OAuth apps are registered at https://developer.capsulecrm.com/.
+
 ## 1.1.1 (2026-11-20)
 
 - Dropped the note that titles and countries take very long strings; use the values from /titles and /countries.

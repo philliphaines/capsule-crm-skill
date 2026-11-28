@@ -2,8 +2,8 @@
 name: capsule-crm
 description: Read and change data in Capsule CRM through its REST API v2 (api.capsulecrm.com). Use whenever the user asks about their Capsule contacts (parties, people, organisations), opportunities, pipelines, projects (cases, "kases"), tasks, tracks, notes, history entries, tags or custom fields; wants to search, filter, list, export, create, update or delete Capsule records; or is writing code, an integration or an app that calls the Capsule API (OAuth, paging, sync, webhooks/REST hooks).
 metadata:
-  version: 1.1.1
-  updated: 2026-11-20
+  version: 1.1.2
+  updated: 2026-11-28
 ---
 
 # Capsule CRM API
