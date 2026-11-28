@@ -8,9 +8,7 @@ Authentication Tokens**. It acts as that user, with their permissions, until del
 
 ## OAuth 2 (apps used by other people)
 
-Register the app at `https://<subdomain>.capsulecrm.com/clients/new` (or via Capsule's developer
-settings). Server-side web apps get a `client_secret`; apps on users' devices (mobile, desktop,
-extensions) are registered as **installed** and use no secret, so use PKCE.
+Register the app at `https://developer.capsulecrm.com/`. Server-side web apps get a `client_secret`; apps on users' devices (mobile, desktop, extensions) are registered as **installed** and use no secret, so use PKCE.
 
 | Step | Endpoint |
 |---|---|
